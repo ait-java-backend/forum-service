@@ -20,40 +20,40 @@ public class PostController {
 
     @PostMapping("/post/{user}")
     @ResponseStatus(HttpStatus.CREATED)
-    public PostDto addNewPost(@PathVariable String author, @RequestBody NewPostDto newPostDto) {
+    public PostDto addNewPost(@PathVariable("user") String author, @RequestBody NewPostDto newPostDto) {
         return postService.addNewPost(author, newPostDto);
     }
 
     @GetMapping("/post/{postId}")
-    public PostDto findPostById(@PathVariable Long id) {
+    public PostDto findPostById(@PathVariable("postId") Long id) {
         return postService.findPostById(id);
     }
 
     @PatchMapping("/post/{postId}/like")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void addLike(@PathVariable Long id) {
+    public void addLike(@PathVariable("postId") Long id) {
         postService.addLike(id);
     }
 
     @PatchMapping("/post/{postId}")
-    public PostDto updatePost(@PathVariable Long id, @RequestBody NewPostDto newPostDto) {
+    public PostDto updatePost(@PathVariable("postId") Long id, @RequestBody NewPostDto newPostDto) {
         return postService.updatePost(id, newPostDto);
     }
 
     @DeleteMapping("/post/{postId}")
-    public PostDto deletePost(@PathVariable Long id) {
+    public PostDto deletePost(@PathVariable("postId") Long id) {
         return postService.deletePost(id);
     }
 
     @PatchMapping("/post/{postId}/comment/{commenter}")
-    public PostDto addComment(@PathVariable Long id,
-                              @PathVariable String author,
+    public PostDto addComment(@PathVariable("postId") Long id,
+                              @PathVariable("commenter") String author,
                               @RequestBody NewCommentDto newCommentDto) {
         return postService.addComment(id, author, newCommentDto);
     }
 
     @GetMapping("/posts/author/{user}")
-    public Iterable<PostDto> findPostsByAuthor(@PathVariable String author) {
+    public Iterable<PostDto> findPostsByAuthor(@PathVariable("user") String author) {
         return postService.findPostsByAuthor(author);
     }
 
