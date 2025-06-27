@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
 
@@ -30,17 +32,10 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public PostDto addNewPost(String author, NewPostDto newPostDto) {
-        Post post = new Post(newPostDto.getTitle(), newPostDto.getTitle(), author);
+        Post post = new Post(newPostDto.getTitle(), newPostDto.getContent(), author);
+
         // Handle tags
-        Set<String> tags = newPostDto.getTags();
-        if (tags != null) {
-            for (String tagName : tags) {
-                Tag tag = tagRepository.findById(tagName).orElseGet(() -> tagRepository.save(new Tag(tagName)));
-                post.addTag(tag);
-            }
-        }
-        post = postRepository.save(post);
-        return modelMapper.map(post, PostDto.class);
+        return getPostDto(newPostDto, post);
     }
 
     @Override
@@ -54,26 +49,33 @@ public class PostServiceImpl implements PostService {
     public void addLike(Long id) {
         Post post = postRepository.findById(id).orElseThrow(PostNotFoundException::new);
         post.addLike();
-        postRepository.save(post);
     }
 
     @Override
     @Transactional
     public PostDto updatePost(Long id, NewPostDto newPostDto) {
         Post post = postRepository.findById(id).orElseThrow(PostNotFoundException::new);
-        post.setTitle(newPostDto.getTitle());
-        post.setContent(newPostDto.getContent());
+        String content = newPostDto.getContent();
+        if (content != null) {
+            post.setContent(content);
+        }
+        String title = newPostDto.getTitle();
+        if (title != null) {
+            post.setTitle(title);
+        }
+        return getPostDto(newPostDto, post);
+    }
 
-        //
-        post.getTags().clear();
-        Set<String> newTags = newPostDto.getTags();
-        if (newTags != null) {
-            for (String tagName : newTags) {
-                Tag tag = tagRepository.findById(tagName).orElseGet(() -> tagRepository.save(new Tag(tagName)));
+    private PostDto getPostDto(NewPostDto newPostDto, Post post) {
+        Set<String> tags = newPostDto.getTags();
+        if (tags != null) {
+            for (String tagName : tags) {
+                Tag tag = tagRepository.findById(tagName)
+                        .orElseGet(() -> tagRepository.save(new Tag(tagName)));
                 post.addTag(tag);
             }
         }
-
+        post = postRepository.save(post);
         return modelMapper.map(post, PostDto.class);
     }
 
@@ -90,25 +92,36 @@ public class PostServiceImpl implements PostService {
     public PostDto addComment(Long id, String author, NewCommentDto newCommentDto) {
         Post post = postRepository.findById(id).orElseThrow(PostNotFoundException::new);
         Comment comment = new Comment(author, newCommentDto.getMessage());
-        comment.setPost(post);
-        commentRepository.save(comment);
+        // TODO check it
         post.addComment(comment);
-
+        commentRepository.save(comment);
+        comment.setPost(post);
         return modelMapper.map(post, PostDto.class);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Iterable<PostDto> findPostsByAuthor(String author) {
-        return null;
+        return postRepository.findPostByAuthorIgnoreCase(author)
+                .map(p -> modelMapper.map(p, PostDto.class))
+                .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Iterable<PostDto> findPostsByTags(List<String> tags) {
-        return null;
+        return postRepository.findDistinctByTagsNameInIgnoreCase(tags)
+                .map(p -> modelMapper.map(p, PostDto.class))
+                .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Iterable<PostDto> findPostsByPeriod(LocalDate dateFrom, LocalDate dateTo) {
-        return null;
+        LocalDateTime from = dateFrom.atStartOfDay();
+        LocalDateTime to = dateTo.atTime(LocalTime.MAX);
+        return postRepository.findByDateCreatedBetween(from, to)
+                .map(p -> modelMapper.map(p, PostDto.class))
+                .toList();
     }
 }

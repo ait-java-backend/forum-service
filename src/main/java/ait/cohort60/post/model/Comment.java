@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 
 @NoArgsConstructor
 @Getter
-@Setter
 @EqualsAndHashCode(of = "id")
 @Entity
 @Table(name = "comments")
@@ -23,6 +22,7 @@ public class Comment {
     private LocalDateTime dateCreated = LocalDateTime.now();
     private int likes;
     @ManyToOne
+    @Setter
     private Post post;
 
     public Comment(String user, String message) {
